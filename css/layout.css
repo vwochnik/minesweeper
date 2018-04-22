@@ -40,18 +40,7 @@ abbr[title], dfn[title] {
 	cursor: help;
 	}
 
-.adsblock {
-	display: block;
-	clear: both;
-	margin: 4px auto;
-	}
-
-table {
-	border-collapse: collapse;
-	border-spacing: 0;
-	}
-
-table, input, select, textarea, button {
+input, select, textarea, button {
 	font-size: inherit;
 	font: 100%;
 	}
@@ -107,4 +96,3 @@ h5, h6 { font-size: 1.2em; }
 	font-size: 0.8em;
 	line-height: 1.1em;
 	}
-

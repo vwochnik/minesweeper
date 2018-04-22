@@ -16,16 +16,6 @@ body.narrow {
 	padding: 0px 8px;
 	}
 
-body.popup {
-	max-width: 376px;
-	margin: 16px auto 4px;
-	padding: 0px 8px;
-	}
-
-body.mobile {
-	margin: 4px;
-	}
-
 hr {
 	visibility: hidden;
 	clear: both;
@@ -128,7 +118,7 @@ section.content .box {
 	color: #88a;
 	padding: 8px;
 	}
-	
+
 .box img.photo, .box pre, .box blockquote {
 	border: none;
 	padding: none;
