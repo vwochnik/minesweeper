@@ -117,11 +117,11 @@ function Minesweeper() {
 		if (hasSound) {
 			sounds[snd] = new Audio();
 			if (sounds[snd].canPlayType("audio/ogg").match(/^(maybe|probably)$/i)) {
-				sounds[snd].src = "/minesweeper/sounds/"+snd+".ogg";
+				sounds[snd].src = "sounds/"+snd+".ogg";
 			} else if (sounds[snd].canPlayType("audio/mp3").match(/^(maybe|probably)$/i)) {
-				sounds[snd].src = "/minesweeper/sounds/"+snd+".mp3";
+				sounds[snd].src = "sounds/"+snd+".mp3";
 			} else {
-				sounds[snd].src = "/minesweeper/sounds/"+snd+".wav";
+				sounds[snd].src = "sounds/"+snd+".wav";
 			}
 
 			sounds[snd].addEventListener("ended",
@@ -179,7 +179,7 @@ function Minesweeper() {
 		flagOnClick = false;
 
 		// set cool smiley
-		smiley.src = "/minesweeper/img/cool.png";
+		smiley.src = "img/cool.png";
 
 		// event
 		if (typeof instance.onNewGame == 'function') {
@@ -317,16 +317,16 @@ function Minesweeper() {
 
 		imageBomb = new Image();
 		imageBomb.onload = onImageLoaded;
-		imageBomb.src = "/minesweeper/img/bomb.png";
+		imageBomb.src = "img/bomb.png";
 		imageExplode = new Image();
 		imageExplode.onload = onImageLoaded;
-		imageExplode.src = "/minesweeper/img/explode.png";
+		imageExplode.src = "img/explode.png";
 		imageFlag = new Image();
 		imageFlag.onload = onImageLoaded;
-		imageFlag.src = "/minesweeper/img/flag.png";
+		imageFlag.src = "img/flag.png";
 		imageMark = new Image();
 		imageMark.onload = onImageLoaded;
-		imageMark.src = "/minesweeper/img/mark.png";
+		imageMark.src = "img/mark.png";
 
 		if (s < 2) {
 			imageCounter = new Array();
@@ -334,7 +334,7 @@ function Minesweeper() {
 				c = i + 1;
 				imageCounter[i] = new Image();
 				imageCounter[i].onload = onImageLoaded;
-				imageCounter[i].src = "/minesweeper/img/numbers/"+c+".png";
+				imageCounter[i].src = "img/numbers/"+c+".png";
 			}
 		} else {
 			imageCounter = new Array();
@@ -342,7 +342,7 @@ function Minesweeper() {
 				c = i + 1;
 				imageCounter[i] = new Image();
 				imageCounter[i].onload = onImageLoaded;
-				imageCounter[i].src = "/minesweeper/img/pieces/"+c+".png";
+				imageCounter[i].src = "img/pieces/"+c+".png";
 			}
 		}
 
@@ -426,7 +426,7 @@ function Minesweeper() {
 			playArea = new Array(padding,
 				Math.round(canvas.height/2.0
 				  - canvas.width/2.0) + padding,
-				  - canvas.width + padding, 
+				  - canvas.width + padding,
 				canvas.width - 2*padding,
 				canvas.width - 2*padding);
 		}
@@ -457,7 +457,7 @@ function Minesweeper() {
 			}
 
 			// set sad smiley
-			smiley.src = "/minesweeper/img/sad.png";
+			smiley.src = "img/sad.png";
 
 			// event
 			if (typeof instance.onGameOver == 'function') {
@@ -482,7 +482,7 @@ function Minesweeper() {
 
 			// set game state and happy smiley
 			isFinished = true;
-			smiley.src = "/minesweeper/img/happy.png";
+			smiley.src = "img/happy.png";
 
 			// time
 			diff = Math.floor((endTime.getTime() - startTime.getTime()) / 100.0);
@@ -726,19 +726,19 @@ function Minesweeper() {
 		}
 		if ((x < fieldSize - 1) && (y > 0) && (hasMine(x+1, y-1))) {
 			mineCount++; // upper right
-		} 
+		}
 		if ((x < fieldSize - 1) && (hasMine(x+1, y))) {
 			mineCount++; // right
-		} 
+		}
 		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (hasMine(x+1, y+1))) {
 			mineCount++; // lower right
-		} 
+		}
 		if ((y < fieldSize - 1) && (hasMine(x, y+1))) {
 			mineCount++; // below
-		} 
+		}
 		if ((x > 0) && (y < fieldSize - 1) && (hasMine(x-1, y+1))) {
 			mineCount++; // lower left
-		} 
+		}
 		if ((x > 0) && (hasMine(x-1, y))) {
 			mineCount++; // left
 		}
@@ -778,19 +778,19 @@ function Minesweeper() {
 		}
 		if ((x < fieldSize - 1) && (y > 0) && (!isCorrect(x+1, y-1))) {
 			return false; // upper right
-		} 
+		}
 		if ((x < fieldSize - 1) && (!isCorrect(x+1, y))) {
 			return false; // right
-		} 
+		}
 		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (!isCorrect(x+1, y+1))) {
 			return false; // lower right
-		} 
+		}
 		if ((y < fieldSize - 1) && (!isCorrect(x, y+1))) {
 			return false; // below
-		} 
+		}
 		if ((x > 0) && (y < fieldSize - 1) && (!isCorrect(x-1, y+1))) {
 			return false; // lower left
-		} 
+		}
 		if ((x > 0) && (!isCorrect(x-1, y))) {
 			return false; // left
 		}
@@ -828,35 +828,35 @@ function Minesweeper() {
 				count += discoverAdjacent(x+1, y-1);
 			}
 			count++;
-		} 
+		}
 		if ((x < fieldSize - 1) && (flaggedMine(x+1, y))) {
 			field[(x+1)][y] = 0; // right
 			if (adjacentMines(x+1, y, true) == 0) {
 				count += discoverAdjacent(x+1, y);
 			}
 			count++;
-		} 
+		}
 		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (flaggedMine(x+1, y+1))) {
 			field[(x+1)][(y+1)] = 0; // lower right
 			if (adjacentMines(x+1, y+1, true) == 0) {
 				count += discoverAdjacent(x+1, y+1);
 			}
 			count++;
-		} 
+		}
 		if ((y < fieldSize - 1) && (flaggedMine(x, y+1))) {
 			field[x][(y+1)] = 0; // below
 			if (adjacentMines(x, y+1, true) == 0) {
 				count += discoverAdjacent(x, y+1);
 			}
 			count++;
-		} 
+		}
 		if ((x > 0) && (y < fieldSize - 1) && (flaggedMine(x-1, y+1))) {
 			field[(x-1)][(y+1)] = 0; // lower left
 			if (adjacentMines(x-1, y+1, true) == 0) {
 				count += discoverAdjacent(x-1, y+1);
 			}
 			count++;
-		} 
+		}
 		if ((x > 0) && (flaggedMine(x-1, y))) {
 			field[(x-1)][y] = 0; // left
 			if (adjacentMines(x-1, y, true) == 0) {
@@ -890,23 +890,23 @@ function Minesweeper() {
 		if ((x < fieldSize - 1) && (y > 0) && (hasFlag(x+1, y-1))) {
 			field[(x+1)][(y-1)] = -1; // upper right
 			count++;
-		} 
+		}
 		if ((x < fieldSize - 1) && (hasFlag(x+1, y))) {
 			field[(x+1)][y] = -1; // right
 			count++;
-		} 
+		}
 		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (hasFlag(x+1, y+1))) {
 			field[(x+1)][(y+1)] = -1; // lower right
 			count++;
-		} 
+		}
 		if ((y < fieldSize - 1) && (hasFlag(x, y+1))) {
 			field[x][(y+1)] = -1; // below
 			count++;
-		} 
+		}
 		if ((x > 0) && (y < fieldSize - 1) && (hasFlag(x-1, y+1))) {
 			field[(x-1)][(y+1)] = -1; // lower left
 			count++;
-		} 
+		}
 		if ((x > 0) && (hasFlag(x-1, y))) {
 			field[(x-1)][y] = -1; // left
 			count++;
@@ -1016,4 +1016,3 @@ function Minesweeper() {
 		}
 	}
 }
-
