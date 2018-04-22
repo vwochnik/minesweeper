@@ -1,0 +1,9 @@
+div#playbutton {
+	float: right;
+	width: 128px;
+	text-align: center;
+	}
+
+div#playbutton span {
+	font-weight: bolder;
+	}

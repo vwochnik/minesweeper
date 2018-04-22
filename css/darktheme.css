@@ -1,0 +1,238 @@
+body {
+	font-size: 12pt;
+	background-color: #1c1c1c;
+	color: #444;
+	margin: 0px;
+	}
+
+body.site {
+	width: 720px;
+	margin: 16px auto 4px;
+	}
+
+body.narrow {
+	max-width: 576px;
+	margin: 16px auto 4px;
+	padding: 0px 8px;
+	}
+
+body.popup {
+	max-width: 376px;
+	margin: 16px auto 4px;
+	padding: 0px 8px;
+	}
+
+body.mobile {
+	margin: 4px;
+	}
+
+hr {
+	visibility: hidden;
+	clear: both;
+	}
+
+a, a:visited {
+	color: #446;
+	text-decoration: none;
+	white-space: nowrap;
+	}
+
+a:hover {
+	text-decoration: underline;
+	}
+
+p.center, td.center {
+	text-align: center;
+	}
+
+code, pre {
+	font-family: monospace;
+	}
+
+pre {
+	font-weight: bold;
+	}
+
+table th {
+	font-weight: bold;
+	}
+
+section.content {
+	color: #d5d5d5;
+	display: block;
+	clear: both;
+	}
+
+section.content .adsblock.mobile {
+	width: 320px;
+	}
+
+section.content .adsblock.banner {
+	width: 468px;
+	}
+
+section.content h1, section.content h2, section.content h3 {
+	font-style: normal;
+	font-weight: bold;
+	color: #00c0ff;
+	}
+
+section.content a, section.content a:visited {
+	color: #00d0ff;
+	}
+
+/* other color for external links */
+section.content a[href^="http"], section.content a[href^="http"]:visited,
+  section.content a[href^="ftp"], section.content a[href^="ftp"]:visited,
+  section.content a[rel="external"], section.content a[rel="external"]:visited {
+	color: #ff92c4;
+	}
+
+section.content abbr[title], section.content dfn[title] {
+	color: #00ffd0;
+	border-bottom: 1px dotted #00ffd0;
+	}
+
+section.content a.button, section.content a:visited.button {
+	display: inline-block;
+	border: 1px solid #88a;
+	background-color: #445;
+	color: #88a;
+	padding: 4px 12px;
+	margin: 0px;
+	}
+
+section.content a:hover.button, section.content a:active.button {
+	border: 1px solid #00d0ff;
+	background-color: #445;
+	color: #00d0ff;
+	text-decoration: none;
+	}
+
+section.content img.photo {
+	border: 1px solid #88a;
+	background-color: #445;
+	padding: 1px;
+	}
+
+section.content pre, section.content blockquote {
+	border: 1px solid #88a;
+	background-color: #445;
+	color: #88a;
+	padding: 16px;
+	}
+
+section.content .box {
+	border: 1px solid #88a;
+	background-color: #445;
+	color: #88a;
+	padding: 8px;
+	}
+	
+.box img.photo, .box pre, .box blockquote {
+	border: none;
+	padding: none;
+	background: none;
+	}
+
+.box table {
+	border-collapse: collapse;
+	width: 100%;
+	}
+.box td, .box th {
+	border: 2px solid #445;
+	background-color: #556;
+	color: #99b;
+	padding: 4px 8px;
+	}
+
+/*
+ * form elements inside of .box
+ */
+.box input[type='text'], .box textarea, .box input[type='submit'],
+  .box input[type='reset'], .box button, .box .strengthmeter {
+	display: inline-block;
+	padding: 4px 6px;
+	margin: 0px;
+	color: #99b;
+	border: 1px solid #88a;
+	background-color: #556;
+	}
+
+.box .strengthmeter.weak {
+	border: 1px solid #a88;
+	background-color: #766;
+	color: #b99;
+	}
+
+.box .strengthmeter.medium {
+	border: 1px solid #aa8;
+	background-color: #776;
+	color: #bb9;
+	}
+
+.box .strengthmeter.strong {
+	border: 1px solid #8a8;
+	background-color: #676;
+	color: #9b9;
+	}
+
+.box .strengthmeter.stronger {
+	border: 1px solid #8b8;
+	background-color: #686;
+	color: #9c9;
+	}
+
+.box input[type='submit'], .box input[type='reset'], .box button {
+	padding: 4px 12px;
+	}
+
+.box input[type='text'].small, .box textarea.small {
+	padding: 2px 3px;
+	}
+
+.box input[type='submit'].small, .box input[type='reset'].small, .box button.small {
+	padding: 2px 6px;
+	}
+
+.box input[type='submit']:hover, .box input[type='reset']:hover,
+  .box button:hover, .box input[type='submit']:focus,
+  .box input[type='reset']:focus, .box button:focus,
+  .box button.active {
+	border: 1px solid #00c0ef;
+	color: #00d0ff;
+	}
+
+section.content .tableofcontents {
+	border: 1px solid #88a;
+	background-color: #445;
+	color: #88a;
+	padding: 8px;
+	width: 40%;
+	float: right;
+	margin-left: 8px;
+	margin-bottom: 4px;
+	}
+
+.tableofcontents h2 {
+	color: #88a;
+	margin-top: 0px;
+	}
+
+.tableofcontents ol {
+	margin-bottom: 0px;
+	padding-left: 26px;
+	}
+
+section.footer {
+	clear: both;
+	display: block;
+	margin: 4px auto 4px;
+	padding: 20px 0px 4px;
+	max-width: 368px;
+	color: #445;
+	}
+
+section.footer span {
+	font-size: 0.8em;
+	}

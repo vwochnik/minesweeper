@@ -1,0 +1,23 @@
+div#scoresbox table #rank {
+	width: 12%;
+	text-align: right;
+	}
+
+div#scoresbox table #name {
+	text-align: left;
+	}
+
+div#scoresbox table #difficulty {
+	width: 17%;
+	text-align: right;
+	}
+
+div#scoresbox table #score {
+	width: 14%;
+	text-align: right;
+	}
+
+div#scoresbox table #date {
+	width: 25%;
+	text-align: right;
+	}

@@ -1,0 +1,60 @@
+---
+title: Play mine sweeper
+layout: default
+---
+<section class="content">
+ <h1>Mine Sweeper</h1>
+ <div class="invisible">
+  <p>This is an HTML5 clone of Mine Sweeper, the classic puzzle game. Clicking on a square reveals whether there is a mine underneath. If not, the number of adjacent mines is shown></p>
+  <ul>
+   <li><img src="img/thumb1.png" title="Thumbnail 1" /></li>
+   <li><img src="img/thumb2.png" title="Thumbnail 2" /></li>
+   <li><img src="img/thumb3.png" title="Thumbnail 3" /></li>
+  </ul>
+ </div>
+ <div class="box" id="mscontainer">
+  <div id="mswrapper">
+   <canvas id="mscanvas" width="360" height="360">
+     <p>Canvas is not supported by your browser.
+   </canvas>
+  </div>
+  <div id="mscontrols">
+   <div id="mstime">
+    <span id="mstimespan">&nbsp;</span>
+   </div>
+   <div id="msbtn">
+    <a id="msgamebtn"><img id="mssmiley" /></a>
+   </div>
+   <br />
+   <div id="mssettings">
+    <span>Size:</span>
+    <br />
+    <button type="button" id="msreducebtn" class="small">Smaller</button>
+    <button type="button" id="msexpandbtn" class="small">Larger</button>
+    <br />
+    <br />
+    <span>Difficulty:</span>
+    <br />
+    <button type="button" id="mseasybtn" class="small">Easy</button>
+    <button type="button" id="msnormalbtn" class="small">Normal</button>
+    <button type="button" id="mshardbtn" class="small">Hard</button>
+    <button type="button" id="msextremebtn" class="small">Extreme</button>
+    <br />
+    <br />
+    <span>Style:</span>
+    <br />
+    <button type="button" id="msstyle1btn" class="small">Style 1</button>
+    <button type="button" id="msstyle2btn" class="small">Style 2</button>
+    <button type="button" id="msstyle3btn" class="small">Style 3</button>
+    <br />
+    <br />
+    <span class="links"><a href="howto1.html" title="How to play mine sweeper?">How to play mine sweeper?</a></span>
+   </div>
+   <div id="msform">
+    <span><b>Your score: <span id="msscore">0</span></b></span>
+   </div>
+  </div>
+ </div>
+</section>
+<script type="text/javascript" src="js/mine.js"></script>
+<script type="text/javascript" src="js/game.js"></script>

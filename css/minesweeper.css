@@ -1,0 +1,54 @@
+div#mscontainer {
+width: 702px;
+}
+
+div#mswrapper {
+margin: 0px 8px 0px 0px;
+padding: none;
+width: 360px;
+height: 360px;
+float: left;
+}
+
+div#mscontrols {
+margin: 0px 0px 0px 368px;
+padding: 12px;
+height: 336px;
+}
+
+div#mssettings {
+display: inline;
+}
+
+div#mssettings span.links {
+font-size: 0.8em;
+line-height: 1em;
+}
+
+div#msform {
+display: none;
+}
+
+div#msform input[type='text'] {
+width: 190px;
+}
+
+div#msbtn, div#msbtn img {
+width: 64px;
+height: 64px;
+}
+
+div#mstime {
+height: 64px;
+float: right;
+}
+
+div#mstime span {
+font-size: 48px;
+line-height: 64px;
+text-align: right;
+}
+
+canvas#mscanvas {
+padding: none;
+}

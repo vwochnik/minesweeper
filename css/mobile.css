@@ -1,0 +1,47 @@
+div#msform, div#mssettings {
+display: none;
+}
+
+div#msform input[type='text'] {
+width: 70%;
+}
+
+div#mssettings span {
+font-size: 10pt;
+}
+
+div#msbtn, div#msbtn img {
+width: 64px;
+height: 64px;
+}
+
+div#msbtn.ingame, div#msbtn.ingame img {
+width: 36pt;
+height: 36pt;
+}
+
+div#mstime {
+height: 64px;
+float: right;
+}
+
+div#mstime.ingame {
+height: 36pt;
+}
+
+div#mstime span {
+font-size: 48px;
+line-height: 64px;
+text-align: right;
+}
+
+div#mstime.ingame span {
+font-size: 28pt;
+line-height: 36pt;
+text-align: right;
+}
+
+canvas#mscanvas {
+padding: none;
+}
+

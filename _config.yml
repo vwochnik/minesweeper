@@ -1,0 +1,8 @@
+# Site settings
+title: Mine sweeper
+author: Vincent Wochnik
+
+# Build settings
+markdown: kramdown
+encoding: utf-8
+exclude: ['Gemfile', 'Gemfile.lock', 'README.md', 'LICENSE.md']

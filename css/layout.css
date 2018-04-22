@@ -1,0 +1,110 @@
+/* Consistent font for everything */
+* {
+	text-rendering: optimizeLegibility !important;
+	}
+
+body {
+	font-family: helvetica, arial, "Nimbus Sans L", "Bitstream Vera Sans", sans-serif;
+	line-height: 1.2em;
+	}
+
+.invisible {
+	display: none;
+	}
+
+img.left, img.right, img.center {
+	display: block;
+	}
+
+div.left, img.left {
+	float: left;
+	margin-right: 12px;
+	margin-bottom: 4px;
+	}
+
+div.center, img.center {
+	margin: 4px auto;
+	}
+
+div.right, img.right {
+	float: right;
+	margin-left: 12px;
+	margin-bottom: 4px;
+	}
+
+a img {
+	border: none;
+	}
+
+abbr[title], dfn[title] {
+	cursor: help;
+	}
+
+.adsblock {
+	display: block;
+	clear: both;
+	margin: 4px auto;
+	}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	}
+
+table, input, select, textarea, button {
+	font-size: inherit;
+	font: 100%;
+	}
+
+code, pre {
+	font-family: "Courier New", monospace, serif;
+	font-size: 1em;
+	}
+
+h1, h2, h3, h4, h5, h6 {
+	font-weight: bold;
+	line-height: 1.2em;
+	}
+
+h1     { font-size: 2em; font-style: normal; }
+h2     { font-size: 1.6em; }
+h3     { font-size: 1.4em; font-style: normal; }
+h4     { font-size: 1.4em; }
+h5, h6 { font-size: 1.2em; }
+
+.sharebtn {
+	height: 24px;
+	padding: 0px;
+}
+
+.sharebtn.left {
+	text-align: left;
+	}
+
+.sharebtn.center {
+	text-align: center;
+	}
+
+.sharebtn.right {
+	text-align: right;
+	}
+
+.sharebtn a img {
+	display: inline;
+	margin: 4px 2px 0px 2px;
+	width: 20px;
+	height: 20px;
+	}
+
+.sharebtn a:hover img {
+	display: inline;
+	margin: 0px;
+	width: 24px;
+	height: 24px;
+	}
+
+.small {
+	font-size: 0.8em;
+	line-height: 1.1em;
+	}
+
