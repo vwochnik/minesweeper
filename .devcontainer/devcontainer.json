@@ -1,0 +1,10 @@
+{
+  "name": "Jekyll",
+  "image": "mcr.microsoft.com/devcontainers/ruby:3.1-bullseye",
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [4000],
+
+  // Install required gems
+  "onCreateCommand": "bundle install"
+}
