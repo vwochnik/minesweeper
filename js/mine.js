@@ -1,217 +1,273 @@
 /*
  * The mine sweeper game class
  */
-function Minesweeper() {
-	// help variable storing 'this' for onclick event
-	var instance = this;
 
-	// html elements
-	var canvas, smiley, timeHolder;
-	// 2d context and game state
-	var context;
-	var isNewGame, isGameOver, isFinished;
-	// game difficulty and score
-	var gameDifficulty, score, flagOnClick;
-	// time measurement
-	var startTime, endTime, intervalId;
-	// field size and number of mines
-	var fieldSize, minesDensity;
+// field cell states
+const CELL_MARK = -3;
+const CELL_FLAG = -2;
+const CELL_UNKNOWN = -1;
 
-	// 2-dimensional arrays
-	// field array stores discovered fields
-	// -3 = marker, -2 = bomb flag, -1 = undiscovred
-	// 0 = zero mines next to this block, 1 - 8 = number of mines next to
-	// the block
-	var field, mines, mistakes;
+// difficulty -> mine density
+const MINE_DENSITY = {
+	0: 1.0 / 8.0,
+	1: 1.0 / 6.0,
+	2: 1.0 / 4.0,
+	3: 1.0 / 2.0,
+};
 
-	// style settings and images
-	var playArea, blockSize, blockMargin;
-	var padding, blockMarginRatio;
-	var colorBackground1, colorBackground2;
-	var colorArea, colorAreaStroke,
-	    colorBlockUnknown, colorBlockUnknownStroke,
-	    colorBlockDiscovered, colorBlockDiscoveredStroke,
-	    colorBlockMistaken, colorBlockMistakenStroke;
-	var imageBomb, imageExplode, imageFlag, imageMark,
-	    imageCounter;
-	var loadingImages, loadingRedraw;
+// style definitions, indexed by style id
+const STYLES = [
+	{
+		padding: 8,
+		blockMarginRatio: 0.1,
+		colorBackground1: "rgba(62, 62, 73, 1.0)",
+		colorBackground2: "rgba(127, 127, 152, 1.0)",
+		colorArea: "",
+		colorAreaStroke: "",
+		colorBlockUnknown: "rgba(44, 44, 54, 0.6)",
+		colorBlockUnknownStroke: "rgba(44, 44, 54, 0.8)",
+		colorBlockDiscovered: "rgba(145, 145, 179, 0.6)",
+		colorBlockDiscoveredStroke: "rgba(115, 115, 142, 0.8)",
+		colorBlockMistaken: "rgba(255, 0, 0, 0.3)",
+		colorBlockMistakenStroke: "rgba(255, 224, 224, 0.6)",
+	},
+	{
+		padding: 8,
+		blockMarginRatio: 0.05,
+		colorBackground1: "rgb(50, 100, 50)",
+		colorBackground2: "rgb(30, 60, 30)",
+		colorArea: "",
+		colorAreaStroke: "",
+		colorBlockUnknown: "rgba(88, 108, 88, 0.8)",
+		colorBlockUnknownStroke: "rgba(88, 108, 88, 0.9)",
+		colorBlockDiscovered: "rgba(145, 179, 145, 0.8)",
+		colorBlockDiscoveredStroke: "rgba(115, 142, 115, 0.9)",
+		colorBlockMistaken: "rgba(255, 0, 0, 0.3)",
+		colorBlockMistakenStroke: "rgba(255, 224, 224, 0.6)",
+	},
+	{
+		padding: 8,
+		blockMarginRatio: 0.1,
+		colorBackground1: "rgba(244, 244, 255, 1.0)",
+		colorBackground2: "rgba(211, 211, 220, 1.0)",
+		colorArea: "",
+		colorAreaStroke: "",
+		colorBlockUnknown: "rgba(190, 190, 198, 0.6)",
+		colorBlockUnknownStroke: "rgba(210, 210, 219, 0.8)",
+		colorBlockDiscovered: "rgba(155, 155, 168, 0.6)",
+		colorBlockDiscoveredStroke: "rgba(136, 136, 148, 0.8)",
+		colorBlockMistaken: "rgba(255, 0, 0, 0.3)",
+		colorBlockMistakenStroke: "rgba(255, 224, 224, 0.6)",
+	},
+];
 
-	// sounds
-	var sounds, hasSound, mute;
+class Minesweeper {
+	constructor() {
+		// html elements
+		this.canvas = null;
+		this.smiley = null;
+		this.timeHolder = null;
+		this.context = null;
 
-	// public members
-	instance.newGame = newGame;
-	instance.scaleUp = scaleUp;
-	instance.scaleDown = scaleDown;
-	instance.refreshDimensions = refreshDimensions;
-	instance.setDifficulty = setDifficulty;
-	instance.newGameScale = newGameScale;
-	instance.getDifficulty = getDifficulty;
-	instance.getScore = getScore;
-	instance.setStyle = setStyle;
-	instance.setMute = setMute;
-	instance.onGameOver = null;
-	instance.onFinished = null;
-	instance.onNewGame = null;
-	instance.onStartGame = null;
+		// game state
+		this.isNewGame = false;
+		this.isGameOver = false;
+		this.isFinished = false;
 
-	// initialize variables
-	init();
+		// difficulty and score
+		this.fieldSize = 10;
+		this.gameDifficulty = 1;
+		this.score = 0;
+		this.flagOnClick = false;
+		this.minesDensity = MINE_DENSITY[1];
+
+		// time measurement
+		this.startTime = null;
+		this.endTime = null;
+		this.intervalId = null;
+
+		// 2-dimensional arrays
+		// field array stores discovered fields
+		// -3 = marker, -2 = bomb flag, -1 = undiscovered
+		// 0 = zero mines next to this block, 1 - 8 = number of mines next to the block
+		this.field = null;
+		this.mines = null;
+		this.mistakes = null;
+
+		// style settings and images
+		this.style = null;
+		this.playArea = null;
+		this.blockSize = 0;
+		this.blockMargin = 0;
+		this.images = {};
+		this.imageCounter = [];
+		this.loadingImages = 0;
+		this.loadingRedraw = false;
+
+		// sounds
+		this.sounds = {};
+		this.hasSound = false;
+		this.mute = false;
+
+		// event callbacks
+		this.onGameOver = null;
+		this.onFinished = null;
+		this.onNewGame = null;
+		this.onStartGame = null;
+
+		this.init();
+	}
 
 	/*
 	 * init function
 	 */
-	function init() {
-		fieldSize = 10;
-		gameDifficulty = 1;
-		score = 0;
+	init() {
+		if (!document.getElementById) {
+			return;
+		}
 
-		if (document.getElementById) {
-			smiley = document.getElementById("mssmiley");
-			canvas = document.getElementById("mscanvas");
-			timeHolder = document.getElementById("mstimespan").firstChild;
+		this.smiley = document.getElementById("mssmiley");
+		this.canvas = document.getElementById("mscanvas");
+		this.timeHolder = document.getElementById("mstimespan").firstChild;
 
-			if ((canvas.getContext) && (canvas.addEventListener)) {
-				context = canvas.getContext("2d");
-				canvas.addEventListener("mousedown",
-					                    function(e) { e.preventDefault(); }, false);
-				canvas.addEventListener("mouseup",
-					                    function(e) { e.preventDefault(); }, false);
-				canvas.addEventListener("click",
-					                    function(e) { onClick(e, false);
-					                                  e.preventDefault(); }, false);
-				canvas.addEventListener("contextmenu",
-					                    function(e) { onClick(e, true);
-					                                  e.preventDefault(); }, false);
+		if (this.canvas.getContext && this.canvas.addEventListener) {
+			this.context = this.canvas.getContext("2d");
+			this.canvas.addEventListener("mousedown", (e) => e.preventDefault(), false);
+			this.canvas.addEventListener("mouseup", (e) => e.preventDefault(), false);
+			this.canvas.addEventListener("click", (e) => {
+				this.onClick(e, false);
+				e.preventDefault();
+			}, false);
+			this.canvas.addEventListener("contextmenu", (e) => {
+				this.onClick(e, true);
+				e.preventDefault();
+			}, false);
 
-				// initialize sounds
-				initSounds();
-			}
+			// initialize sounds
+			this.initSounds();
 		}
 	}
 
-	function initSounds() {
+	initSounds() {
 		// check for support
-		hasSound = true;
+		this.hasSound = true;
 		try {
 			if (!new Audio().canPlayType) {
-				hasSound = false;
+				this.hasSound = false;
 			}
 		} catch (e) {
-			hasSound = false;
+			this.hasSound = false;
 		}
 
 		// activate sound by default
-		mute = false;
+		this.mute = false;
 
-		sounds = new Array();
-		loadSound("boom");
-		loadSound("discover");
-		loadSound("flag");
+		this.sounds = {};
+		this.loadSound("boom");
+		this.loadSound("discover");
+		this.loadSound("flag");
 	}
 
 	/*
 	 * Loads a specific sound
 	 */
-	function loadSound(snd) {
-		if (hasSound) {
-			sounds[snd] = new Audio();
-			if (sounds[snd].canPlayType("audio/ogg").match(/^(maybe|probably)$/i)) {
-				sounds[snd].src = "sounds/"+snd+".ogg";
-			} else if (sounds[snd].canPlayType("audio/mp3").match(/^(maybe|probably)$/i)) {
-				sounds[snd].src = "sounds/"+snd+".mp3";
-			} else {
-				sounds[snd].src = "sounds/"+snd+".wav";
-			}
-
-			sounds[snd].addEventListener("ended",
-			                             function(e) { sounds[snd].load(); }, false);
-			sounds[snd].load();
-		} else {
-			sounds[snd] = null;
+	loadSound(snd) {
+		if (!this.hasSound) {
+			this.sounds[snd] = null;
+			return;
 		}
+
+		const audio = new Audio();
+		if (audio.canPlayType("audio/ogg").match(/^(maybe|probably)$/i)) {
+			audio.src = `sounds/${snd}.ogg`;
+		} else if (audio.canPlayType("audio/mp3").match(/^(maybe|probably)$/i)) {
+			audio.src = `sounds/${snd}.mp3`;
+		} else {
+			audio.src = `sounds/${snd}.wav`;
+		}
+
+		audio.addEventListener("ended", () => audio.load(), false);
+		audio.load();
+		this.sounds[snd] = audio;
 	}
 
 	/*
 	 * Plays a previously loaded sound
 	 */
-	function playSound(snd) {
-		if ((!hasSound) || (mute) || (sounds[snd] == null) || (sounds[snd].error)) {
+	playSound(snd) {
+		const audio = this.sounds[snd];
+		if (!this.hasSound || this.mute || audio == null || audio.error) {
 			return;
 		}
 
-		if (sounds[snd].aborted) {
-			sounds[snd].load();
-		} else if (sounds[snd].currentTime > 0) {
-			sounds[snd].load();
+		if (audio.aborted) {
+			audio.load();
+		} else if (audio.currentTime > 0) {
+			audio.load();
 		}
-		sounds[snd].play();
+		audio.play();
 	}
 
 	/*
 	 * starts a new game
 	 */
-	function newGame() {
+	newGame() {
 		// create arrays
-		field = new Array(fieldSize);
-		mines = new Array(fieldSize);
-		mistakes = new Array(fieldSize);
+		this.field = new Array(this.fieldSize);
+		this.mines = new Array(this.fieldSize);
+		this.mistakes = new Array(this.fieldSize);
 
-		for (var x = 0; x < fieldSize; x++) {
-			field[x] = new Array(fieldSize);
-			mines[x] = new Array(fieldSize);
-			mistakes[x] = new Array(fieldSize);
+		for (let x = 0; x < this.fieldSize; x++) {
+			this.field[x] = new Array(this.fieldSize);
+			this.mines[x] = new Array(this.fieldSize);
+			this.mistakes[x] = new Array(this.fieldSize);
 
-			for (var y = 0; y < fieldSize; y++) {
-				field[x][y] = -1;
-				mines[x][y] = 0;
-				mistakes[x][y] = 0;
+			for (let y = 0; y < this.fieldSize; y++) {
+				this.field[x][y] = CELL_UNKNOWN;
+				this.mines[x][y] = 0;
+				this.mistakes[x][y] = 0;
 			}
 		}
 
-		isNewGame = true;
-		isGameOver = false;
-		isFinished = false;
-		startTime = null;
-		endTime = null;
-		clearInterval(intervalId);
-		intervalId = setInterval(writeTime, 50);
-		flagOnClick = false;
+		this.isNewGame = true;
+		this.isGameOver = false;
+		this.isFinished = false;
+		this.startTime = null;
+		this.endTime = null;
+		clearInterval(this.intervalId);
+		this.intervalId = setInterval(() => this.writeTime(), 50);
+		this.flagOnClick = false;
 
 		// set cool smiley
-		smiley.src = "img/cool.png";
+		this.smiley.src = "img/cool.png";
 
 		// event
-		if (typeof instance.onNewGame == 'function') {
-			instance.onNewGame();
+		if (typeof this.onNewGame === "function") {
+			this.onNewGame();
 		}
 
-		draw();
+		this.draw();
 	}
 
 	/*
 	 * scale up function
 	 */
-	function scaleUp() {
-		if (isNewGame) {
-			if (fieldSize < 16) {
-				fieldSize++;
-				dimensions();
-				newGame(); // re-init field arrays
-			}
+	scaleUp() {
+		if (this.isNewGame && this.fieldSize < 16) {
+			this.fieldSize++;
+			this.dimensions();
+			this.newGame(); // re-init field arrays
 		}
 	}
 
 	/*
 	 * scale down function
 	 */
-	function scaleDown() {
-		if (isNewGame) {
-			if (fieldSize > 6) {
-				fieldSize--;
-				dimensions();
-				newGame(); // re-init field arrays
-			}
+	scaleDown() {
+		if (this.isNewGame && this.fieldSize > 6) {
+			this.fieldSize--;
+			this.dimensions();
+			this.newGame(); // re-init field arrays
 		}
 	}
 
@@ -219,18 +275,10 @@ function Minesweeper() {
 	 * difficulty setter function
 	 * 0 = easy, 1 = normal, 2 = hard, 3 = extreme
 	 */
-	function setDifficulty(d) {
-		if ((isNewGame) && (d >= 0) && (d <= 3)) {
-			gameDifficulty = d;
-			if (d == 0) {
-				minesDensity = 1.0/8.0;
-			} else if (d == 1) {
-				minesDensity = 1.0/6.0;
-			} else if (d == 2) {
-				minesDensity = 1.0/4.0;
-			} else if (d == 3) {
-				minesDensity = 1.0/2.0;
-			}
+	setDifficulty(d) {
+		if (this.isNewGame && d >= 0 && d <= 3) {
+			this.gameDifficulty = d;
+			this.minesDensity = MINE_DENSITY[d];
 			return true;
 		}
 		return false;
@@ -240,115 +288,64 @@ function Minesweeper() {
 	 * scale setter function
 	 * 6 - 16
 	 */
-	function newGameScale(s) {
-		if ((s >= 6) && (s <= 16)) {
-			fieldSize = s;
-			dimensions();
-			newGame(); // re-init field arrays
+	newGameScale(s) {
+		if (s >= 6 && s <= 16) {
+			this.fieldSize = s;
+			this.dimensions();
+			this.newGame(); // re-init field arrays
 		}
 	}
 
-	function getDifficulty() {
-		return gameDifficulty;
+	getDifficulty() {
+		return this.gameDifficulty;
 	}
 
-	function getScore() {
-		if (isFinished) {
-			return score;
-		} else {
-			return 0;
-		}
+	getScore() {
+		return this.isFinished ? this.score : 0;
 	}
 
 	/*
 	 * style setter function
 	 * 0 = style 1, 1 = style 2, 2 = style 3
 	 */
-	function setStyle(s, redraw) {
-		var c;
-
-		if ((s != 0) && (s != 1) && (s != 2)) {
+	setStyle(s, redraw) {
+		if (s !== 0 && s !== 1 && s !== 2) {
 			return false;
 		}
 
-		if (s == 0) {
-			padding = 8;
-			blockMarginRatio = 0.1;
-			colorBackground1 = "rgba(62, 62, 73, 1.0)";
-			colorBackground2 = "rgba(127, 127, 152, 1.0)";
-			colorArea = "";
-			colorAreaStroke = "";
-			colorBlockUnknown = "rgba(44, 44, 54, 0.6)";
-			colorBlockUnknownStroke = "rgba(44, 44, 54, 0.8)";
-			colorBlockDiscovered = "rgba(145, 145, 179, 0.6)";
-			colorBlockDiscoveredStroke = "rgba(115, 115, 142, 0.8)";
-			colorBlockMistaken = "rgba(255, 0, 0, 0.3)";
-			colorBlockMistakenStroke = "rgba(255, 224, 224, 0.6)";
-		} else if (s == 1) {
-			padding = 8;
-			blockMarginRatio = 0.05;
-			colorBackground1 = "rgb(50, 100, 50)";
-			colorBackground2 = "rgb(30, 60, 30)";
-			colorArea = "";
-			colorAreaStroke = "";
-			colorBlockUnknown = "rgba(88, 108, 88, 0.8)";
-			colorBlockUnknownStroke = "rgba(88, 108, 88, 0.9)";
-			colorBlockDiscovered = "rgba(145, 179, 145, 0.8)";
-			colorBlockDiscoveredStroke = "rgba(115, 142, 115, 0.9)";
-			colorBlockMistaken = "rgba(255, 0, 0, 0.3)";
-			colorBlockMistakenStroke = "rgba(255, 224, 224, 0.6)";
-		} else if (s == 2) {
-			padding = 8;
-			blockMarginRatio = 0.1;
-			colorBackground1 = "rgba(244, 244, 255, 1.0)";
-			colorBackground2 = "rgba(211, 211, 220, 1.0)";
-			colorArea = "";
-			colorAreaStroke = "";
-			colorBlockUnknown = "rgba(190, 190, 198, 0.6)";
-			colorBlockUnknownStroke = "rgba(210, 210, 219, 0.8)";
-			colorBlockDiscovered = "rgba(155, 155, 168, 0.6)";
-			colorBlockDiscoveredStroke = "rgba(136, 136, 148, 0.8)";
-			colorBlockMistaken = "rgba(255, 0, 0, 0.3)";
-			colorBlockMistakenStroke = "rgba(255, 224, 224, 0.6)";
-		}
+		this.style = STYLES[s];
 
 		// initialize image objects
-		loadingImages = 12; // 12 images to load
+		this.loadingImages = 12; // 12 images to load
 
-		imageBomb = new Image();
-		imageBomb.onload = onImageLoaded;
-		imageBomb.src = "img/bomb.png";
-		imageExplode = new Image();
-		imageExplode.onload = onImageLoaded;
-		imageExplode.src = "img/explode.png";
-		imageFlag = new Image();
-		imageFlag.onload = onImageLoaded;
-		imageFlag.src = "img/flag.png";
-		imageMark = new Image();
-		imageMark.onload = onImageLoaded;
-		imageMark.src = "img/mark.png";
+		const onImageLoaded = () => this.onImageLoaded();
 
-		if (s < 2) {
-			imageCounter = new Array();
-			for (var i = 0; i < 8; i++) {
-				c = i + 1;
-				imageCounter[i] = new Image();
-				imageCounter[i].onload = onImageLoaded;
-				imageCounter[i].src = "img/numbers/"+c+".png";
-			}
-		} else {
-			imageCounter = new Array();
-			for (var i = 0; i < 8; i++) {
-				c = i + 1;
-				imageCounter[i] = new Image();
-				imageCounter[i].onload = onImageLoaded;
-				imageCounter[i].src = "img/pieces/"+c+".png";
-			}
+		this.images = {};
+		const baseImages = {
+			bomb: "img/bomb.png",
+			explode: "img/explode.png",
+			flag: "img/flag.png",
+			mark: "img/mark.png",
+		};
+		for (const [name, src] of Object.entries(baseImages)) {
+			const img = new Image();
+			img.onload = onImageLoaded;
+			img.src = src;
+			this.images[name] = img;
 		}
 
-		dimensions();
+		const counterDir = s < 2 ? "numbers" : "pieces";
+		this.imageCounter = [];
+		for (let i = 0; i < 8; i++) {
+			const img = new Image();
+			img.onload = onImageLoaded;
+			img.src = `img/${counterDir}/${i + 1}.png`;
+			this.imageCounter[i] = img;
+		}
+
+		this.dimensions();
 		if (redraw) {
-			draw();
+			this.draw();
 		}
 
 		return true;
@@ -357,142 +354,130 @@ function Minesweeper() {
 	/*
 	 * calls the redraw function if there are no more images to load
 	 */
-	function onImageLoaded() {
-		if (loadingImages > 0) {
-			loadingImages--;
+	onImageLoaded() {
+		if (this.loadingImages > 0) {
+			this.loadingImages--;
 		}
 
-		if (loadingImages == 0) {
-			draw();
+		if (this.loadingImages === 0) {
+			this.draw();
 		}
 	}
 
 	/*
 	 * set mute function
 	 */
-	function setMute(m) {
-		if (m) {
-			mute = true;
-		} else {
-			mute = false;
-		}
+	setMute(m) {
+		this.mute = !!m;
 	}
 
 	/*
 	 * writes time into time holder
 	 */
-	function writeTime() {
-		var diff, readable, min, sec, msec;
+	writeTime() {
+		let diff;
 
-		if (startTime != null) {
-			if (endTime != null) {
-				diff = endTime.getTime() - startTime.getTime();
-				clearInterval(intervalId);
+		if (this.startTime != null) {
+			if (this.endTime != null) {
+				diff = this.endTime.getTime() - this.startTime.getTime();
+				clearInterval(this.intervalId);
 			} else {
-				var now = new Date();
-				diff = now.getTime() - startTime.getTime();
+				diff = Date.now() - this.startTime.getTime();
 			}
 		} else {
 			diff = 0;
 		}
 
-		min = Math.floor(diff / 60000.0).toString();
-		sec = Math.floor((diff % 60000) / 1000.0).toString();
-		msec = Math.floor((diff % 1000) / 10.0).toString();
+		const min = Math.floor(diff / 60000.0).toString();
+		const sec = Math.floor((diff % 60000) / 1000.0).toString().padStart(2, "0");
+		const msec = Math.floor((diff % 1000) / 10.0).toString().padStart(2, "0");
 
-		// pad with zeros
-		while (sec.length < 2) {
-			sec = "0" + sec;
-		}
-		while (msec.length < 2) {
-			msec = "0" + msec;
-		}
-
-		readable = min + ":" + sec + "." + msec;
-		timeHolder.nodeValue = readable;
+		this.timeHolder.nodeValue = `${min}:${sec}.${msec}`;
 	}
 
 	/*
 	 * set dimensions for drawing function
 	 */
-	function dimensions() {
-		if (canvas.width >= canvas.height) {
-			playArea = new Array(Math.round(canvas.width/2.0
-				  - canvas.height/2.0) + padding,
+	dimensions() {
+		const padding = this.style.padding;
+
+		if (this.canvas.width >= this.canvas.height) {
+			this.playArea = [
+				Math.round(this.canvas.width / 2.0 - this.canvas.height / 2.0) + padding,
 				padding,
-				canvas.height - 2*padding,
-				canvas.height - 2*padding);
+				this.canvas.height - 2 * padding,
+				this.canvas.height - 2 * padding,
+			];
 		} else {
-			playArea = new Array(padding,
-				Math.round(canvas.height/2.0
-				  - canvas.width/2.0) + padding,
-				  - canvas.width + padding,
-				canvas.width - 2*padding,
-				canvas.width - 2*padding);
+			this.playArea = [
+				padding,
+				Math.round(this.canvas.height / 2.0 - this.canvas.width / 2.0) + padding,
+				this.canvas.width - 2 * padding,
+				this.canvas.width - 2 * padding,
+			];
 		}
 
-		blockMargin = Math.round(playArea[2] / fieldSize * blockMarginRatio);
-		blockSize = Math.round((playArea[2] - blockMargin) / fieldSize) - blockMargin;
+		this.blockMargin = Math.round(this.playArea[2] / this.fieldSize * this.style.blockMarginRatio);
+		this.blockSize = Math.round((this.playArea[2] - this.blockMargin) / this.fieldSize) - this.blockMargin;
 	}
 
-	function refreshDimensions() {
-		dimensions();
-		draw();
+	refreshDimensions() {
+		this.dimensions();
+		this.draw();
 	}
 
 	/*
 	 * check if gameplay finished
 	 */
-	function checkIfFinished() {
-		var diff;
-
-		if (isGameOver) {
+	checkIfFinished() {
+		if (this.isGameOver) {
 			// set end time
-			endTime = new Date();
+			this.endTime = new Date();
 
-			for (var x = 0; x < fieldSize; x++) {
-				for (var y = 0; y < fieldSize; y++) {
-					discover(x, y, false);
+			for (let x = 0; x < this.fieldSize; x++) {
+				for (let y = 0; y < this.fieldSize; y++) {
+					this.discover(x, y, false);
 				}
 			}
 
 			// set sad smiley
-			smiley.src = "img/sad.png";
+			this.smiley.src = "img/sad.png";
 
 			// event
-			if (typeof instance.onGameOver == 'function') {
-				instance.onGameOver();
+			if (typeof this.onGameOver === "function") {
+				this.onGameOver();
 			}
-		} else {
-			for (var x = 0; x < fieldSize; x++) {
-				for (var y = 0; y < fieldSize; y++) {
-					if ((field[x][y] < 0) && (mines[x][y] == 0)) {
-						return; // not finished - yet
-					}
+			return;
+		}
+
+		for (let x = 0; x < this.fieldSize; x++) {
+			for (let y = 0; y < this.fieldSize; y++) {
+				if (this.field[x][y] < 0 && this.mines[x][y] === 0) {
+					return; // not finished - yet
 				}
 			}
-			endTime = new Date();
-			for (var x = 0; x < fieldSize; x++) {
-				for (var y = 0; y < fieldSize; y++) {
-					if ((field[x][y] < 0) && (mines[x][y] != 0)) {
-						field[x][y] = 0;
-					}
+		}
+
+		this.endTime = new Date();
+		for (let x = 0; x < this.fieldSize; x++) {
+			for (let y = 0; y < this.fieldSize; y++) {
+				if (this.field[x][y] < 0 && this.mines[x][y] !== 0) {
+					this.field[x][y] = 0;
 				}
 			}
+		}
 
-			// set game state and happy smiley
-			isFinished = true;
-			smiley.src = "img/happy.png";
+		// set game state and happy smiley
+		this.isFinished = true;
+		this.smiley.src = "img/happy.png";
 
-			// time
-			diff = Math.floor((endTime.getTime() - startTime.getTime()) / 100.0);
-			score = Math.floor(10000 * minesDensity * fieldSize
-				                  / Math.pow(diff, 1.0/3.0));
+		// time
+		const diff = Math.floor((this.endTime.getTime() - this.startTime.getTime()) / 100.0);
+		this.score = Math.floor(10000 * this.minesDensity * this.fieldSize / Math.pow(diff, 1.0 / 3.0));
 
-			// event
-			if (typeof instance.onFinished == 'function') {
-				instance.onFinished();
-			}
+		// event
+		if (typeof this.onFinished === "function") {
+			this.onFinished();
 		}
 	}
 
@@ -500,19 +485,18 @@ function Minesweeper() {
 	 * place mines after the first click
 	 * startX and startY indicate the place where no mine has to be
 	 */
-	function placeMines(startX, startY) {
-		var numberOfMines;
-		numberOfMines = minesDensity * Math.pow(fieldSize, 2);
+	placeMines(startX, startY) {
+		const numberOfMines = this.minesDensity * Math.pow(this.fieldSize, 2);
 
 		// place mines
-		var i = 0;
+		let i = 0;
 		while (i < numberOfMines) {
-			var x = Math.round(Math.random() * (fieldSize-1));
-			var y = Math.round(Math.random() * (fieldSize-1));
+			const x = Math.round(Math.random() * (this.fieldSize - 1));
+			const y = Math.round(Math.random() * (this.fieldSize - 1));
 
-			if ((mines[x][y] == 0) &&
-			    ((Math.abs(startX - x) > 1) || (Math.abs(startY - y) > 1))) {
-				mines[x][y] = 1;
+			if (this.mines[x][y] === 0 &&
+			    (Math.abs(startX - x) > 1 || Math.abs(startY - y) > 1)) {
+				this.mines[x][y] = 1;
 				i++;
 			}
 		}
@@ -521,103 +505,108 @@ function Minesweeper() {
 	/*
 	 * click event
 	 */
-	function onClick(e, rightbtn) {
-		var x, y;
+	onClick(e, rightbtn) {
+		let x, y;
 
-		if ((e.pageX) || (e.pageY)) {
-			x = e.pageX - canvas.offsetLeft;
-			y = e.pageY - canvas.offsetTop;
+		if (e.pageX || e.pageY) {
+			x = e.pageX - this.canvas.offsetLeft;
+			y = e.pageY - this.canvas.offsetTop;
 		} else {
-			x = e.clientX + document.body.scrollLeft
-			  + document.documentElement.scrollLeft
-			  - canvas.offsetLeft;
-			y = e.clientY + domyHowtoPopupcument.body.scrollTop
-			  + document.documentElement.scrollTop
-			  - canvas.offsetTop;
+			x = e.clientX + document.body.scrollLeft +
+			    document.documentElement.scrollLeft - this.canvas.offsetLeft;
+			y = e.clientY + document.body.scrollTop +
+			    document.documentElement.scrollTop - this.canvas.offsetTop;
 		}
 
-		// if the user has clicked into the play area
-		if ((x >= playArea[0]) && (x <= playArea[0] + playArea[2]) &&
-		    (y >= playArea[1]) && (y <= playArea[1] + playArea[3]) &&
-		    (!isGameOver) && (!isFinished)) {
-			var blockX, blockY;
+		const playArea = this.playArea;
 
-			blockX = x - playArea[0] - blockMargin;
-			blockY = y - playArea[1] - blockMargin;
+		// if the user has clicked into the play area
+		if (x >= playArea[0] && x <= playArea[0] + playArea[2] &&
+		    y >= playArea[1] && y <= playArea[1] + playArea[3] &&
+		    !this.isGameOver && !this.isFinished) {
+			let blockX = x - playArea[0] - this.blockMargin;
+			let blockY = y - playArea[1] - this.blockMargin;
 
 			// if the user has clicked on a block
-			if ((blockX % (blockSize + blockMargin) <= blockSize) &&
-			    (blockY % (blockSize + blockMargin) <= blockSize)) {
-				blockX = Math.floor(blockX / (blockSize + blockMargin));
-				blockY = Math.floor(blockY / (blockSize + blockMargin));
+			if (blockX % (this.blockSize + this.blockMargin) <= this.blockSize &&
+			    blockY % (this.blockSize + this.blockMargin) <= this.blockSize) {
+				blockX = Math.floor(blockX / (this.blockSize + this.blockMargin));
+				blockY = Math.floor(blockY / (this.blockSize + this.blockMargin));
 
 				// place mines
-				if (isNewGame) {
-					if ((!rightbtn) && (!e.ctrlKey) && (!e.shiftKey)) {
-						placeMines(blockX, blockY);
-						isNewGame = false;
-						startTime = new Date();
+				if (this.isNewGame) {
+					if (!rightbtn && !e.ctrlKey && !e.shiftKey) {
+						this.placeMines(blockX, blockY);
+						this.isNewGame = false;
+						this.startTime = new Date();
 					}
 
 					// event
-					if (typeof instance.onStartGame == 'function') {
-						instance.onStartGame();
+					if (typeof this.onStartGame === "function") {
+						this.onStartGame();
 					}
 				}
 
-				if (!isNewGame) {
-					if (field[blockX][blockY] < 0) {
-						if ((rightbtn) || (e.ctrlKey) || (flagOnClick)) {
-							if (((rightbtn) || (e.ctrlKey)) && (field[blockX][blockY] == -2)) {
-								field[blockX][blockY] = -1;
-							} else {
-								field[blockX][blockY] = -2;
-								flagOnClick = false;
-								playSound("flag");
-							}
-						} else if (e.shiftKey) {
-							if (field[blockX][blockY] == -3) {
-								field[blockX][blockY] = -1;
-							} else {
-								field[blockX][blockY] = -3;
-								playSound("flag");
-							}
-						} else if (field[blockX][blockY] < -1) {
-							field[blockX][blockY] = -1;
-						} else if (field[blockX][blockY] < 0) {
-							if (discover(blockX, blockY, true) > 0) {
-								if (isGameOver) {
-									playSound("boom");
-								} else {
-									playSound("discover");
-								}
-								checkIfFinished();
-							}
-						}
-						draw();
-					} else if ((!rightbtn) && (!e.ctrlKey) && (!e.shiftKey)) {
-						if ((gameDifficulty < 2) && (mines[blockX][blockY] == 0)) {
-							if (checkFlags(blockX, blockY, true)) {
-								if (fixFlags(blockX, blockY) > 0) {
-									playSound("discover");
-									checkIfFinished();
-									draw();
-								} else {
-									flagOnClick = true;
-								}
-							} else {
-								flagOnClick = true;
-								if (!checkFlags(blockX, blockY, false)) {
-									if (removeFlags(blockX, blockY) > 0) {
-										draw();
-									}
-								}
-							}
-						} else {
-							flagOnClick = true;
+				if (!this.isNewGame) {
+					this.handleBlockClick(blockX, blockY, e, rightbtn);
+				}
+			}
+		}
+	}
+
+	/*
+	 * handles a click on a specific block
+	 */
+	handleBlockClick(blockX, blockY, e, rightbtn) {
+		if (this.field[blockX][blockY] < 0) {
+			if (rightbtn || e.ctrlKey || this.flagOnClick) {
+				if ((rightbtn || e.ctrlKey) && this.field[blockX][blockY] === CELL_FLAG) {
+					this.field[blockX][blockY] = CELL_UNKNOWN;
+				} else {
+					this.field[blockX][blockY] = CELL_FLAG;
+					this.flagOnClick = false;
+					this.playSound("flag");
+				}
+			} else if (e.shiftKey) {
+				if (this.field[blockX][blockY] === CELL_MARK) {
+					this.field[blockX][blockY] = CELL_UNKNOWN;
+				} else {
+					this.field[blockX][blockY] = CELL_MARK;
+					this.playSound("flag");
+				}
+			} else if (this.field[blockX][blockY] < CELL_UNKNOWN) {
+				this.field[blockX][blockY] = CELL_UNKNOWN;
+			} else if (this.field[blockX][blockY] < 0) {
+				if (this.discover(blockX, blockY, true) > 0) {
+					if (this.isGameOver) {
+						this.playSound("boom");
+					} else {
+						this.playSound("discover");
+					}
+					this.checkIfFinished();
+				}
+			}
+			this.draw();
+		} else if (!rightbtn && !e.ctrlKey && !e.shiftKey) {
+			if (this.gameDifficulty < 2 && this.mines[blockX][blockY] === 0) {
+				if (this.checkFlags(blockX, blockY, true)) {
+					if (this.fixFlags(blockX, blockY) > 0) {
+						this.playSound("discover");
+						this.checkIfFinished();
+						this.draw();
+					} else {
+						this.flagOnClick = true;
+					}
+				} else {
+					this.flagOnClick = true;
+					if (!this.checkFlags(blockX, blockY, false)) {
+						if (this.removeFlags(blockX, blockY) > 0) {
+							this.draw();
 						}
 					}
 				}
+			} else {
+				this.flagOnClick = true;
 			}
 		}
 	}
@@ -627,36 +616,36 @@ function Minesweeper() {
 	 * marks fields as discovered and sets the number of
 	 * mines near this field.
 	 */
-	function discover(x, y, adjacent) {
-		var count = 0;
+	discover(x, y, adjacent) {
+		let count = 0;
 
 		// check if square already discovered
-		if (field[x][y] >= 0) {
+		if (this.field[x][y] >= 0) {
 			return 0;
 		}
 
 		// check for mine
-		if (mines[x][y] != 0) {
+		if (this.mines[x][y] !== 0) {
 			// user has discovered a mine :)
-			field[x][y] = 0;
-			if (!isGameOver) {
-				mistakes[x][y] = 1;
-				isGameOver = true; // :D
+			this.field[x][y] = 0;
+			if (!this.isGameOver) {
+				this.mistakes[x][y] = 1;
+				this.isGameOver = true; // :D
 			}
 			return 1;
 		}
 
 		// mark false flags as mistakes
-		if ((isGameOver) && (field[x][y] < -1)) {
-			mistakes[x][y] = 1;
+		if (this.isGameOver && this.field[x][y] < CELL_UNKNOWN) {
+			this.mistakes[x][y] = 1;
 		}
 
 		// set number of near mines
-		field[x][y] = adjacentMines(x, y, false);
+		this.field[x][y] = this.adjacentMines(x, y, false);
 		count++;
 
-		if ((adjacent) && (adjacentMines(x, y, true) == 0)) {
-			count += discoverAdjacent(x, y);
+		if (adjacent && this.adjacentMines(x, y, true) === 0) {
+			count += this.discoverAdjacent(x, y);
 		}
 
 		return count;
@@ -665,35 +654,21 @@ function Minesweeper() {
 	/*
 	 * Calls the discover function for every adjacent field
 	 */
-	function discoverAdjacent(x, y) {
-		var count = 0;
+	discoverAdjacent(x, y) {
+		let count = 0;
+		const size = this.fieldSize;
 
-		if (x > 0) {
-			if ((y > 0) && (field[(x-1)][(y-1)] == -1)) {
-				count += discover(x-1,y-1, true);
-			}
-			if (field[(x-1)][y] == -1) {
-				count += discover(x-1,y, true);
-			}
-			if ((y < fieldSize - 1) && (field[(x-1)][(y+1)] == -1)) {
-				count += discover(x-1,y+1, true);
-			}
-		}
-		if ((y > 0) && (field[x][(y-1)] == -1)) {
-			count += discover(x,y-1, true);
-		}
-		if ((y < fieldSize - 1) && (field[x][(y+1)] == -1)) {
-			count += discover(x,y+1, true);
-		}
-		if (x < fieldSize - 1) {
-			if ((y > 0) && (field[(x+1)][(y-1)] == -1)) {
-				count += discover(x+1,y-1, true);
-			}
-			if (field[(x+1)][y] == -1) {
-				count += discover(x+1,y, true);
-			}
-			if ((y < fieldSize - 1) && (field[(x+1)][(y+1)] == -1)) {
-				count += discover(x+1,y+1, true);
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				if (dx === 0 && dy === 0) {
+					continue;
+				}
+				const nx = x + dx;
+				const ny = y + dy;
+				if (nx >= 0 && nx < size && ny >= 0 && ny < size &&
+				    this.field[nx][ny] === CELL_UNKNOWN) {
+					count += this.discover(nx, ny, true);
+				}
 			}
 		}
 
@@ -704,43 +679,29 @@ function Minesweeper() {
 	 * Returns the number of undiscovered adjacent mines
 	 * @param undiscovered: if true, returns only number of undiscovered mines
 	 */
-	function adjacentMines(x, y, undiscovered) {
-		var mineCount = 0;
+	adjacentMines(x, y, undiscovered) {
+		let mineCount = 0;
+		const size = this.fieldSize;
 
-		// helper function checking if a field has a mine
-		// and if it is undiscovered
-		function hasMine(x, y) {
+		// helper checking if a field has a mine (and is undiscovered)
+		const hasMine = (mx, my) => {
 			if (undiscovered) {
-				return ((field[x][y] < 0) && (mines[x][y] != 0));
-			} else {
-				return (mines[x][y] != 0);
+				return this.field[mx][my] < 0 && this.mines[mx][my] !== 0;
 			}
-		}
+			return this.mines[mx][my] !== 0;
+		};
 
-		// check for mines
-		if ((x > 0) && (y > 0) && (hasMine(x-1, y-1))) {
-			mineCount++; // upper left
-		}
-		if ((y > 0) && (hasMine(x, y-1))) {
-			mineCount++; // above
-		}
-		if ((x < fieldSize - 1) && (y > 0) && (hasMine(x+1, y-1))) {
-			mineCount++; // upper right
-		}
-		if ((x < fieldSize - 1) && (hasMine(x+1, y))) {
-			mineCount++; // right
-		}
-		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (hasMine(x+1, y+1))) {
-			mineCount++; // lower right
-		}
-		if ((y < fieldSize - 1) && (hasMine(x, y+1))) {
-			mineCount++; // below
-		}
-		if ((x > 0) && (y < fieldSize - 1) && (hasMine(x-1, y+1))) {
-			mineCount++; // lower left
-		}
-		if ((x > 0) && (hasMine(x-1, y))) {
-			mineCount++; // left
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				if (dx === 0 && dy === 0) {
+					continue;
+				}
+				const nx = x + dx;
+				const ny = y + dy;
+				if (nx >= 0 && nx < size && ny >= 0 && ny < size && hasMine(nx, ny)) {
+					mineCount++;
+				}
+			}
 		}
 
 		return mineCount;
@@ -748,168 +709,95 @@ function Minesweeper() {
 
 	/*
 	 * Function checking, if the user has set all flags correctly
-	 * This is the case, when every mine arround has a flag
+	 * This is the case, when every mine around has a flag
 	 * false if (hasFlag != hasMine)
 	 */
-	function checkFlags(x, y, total) {
-		// helper function checking if a flag has been set correctly
-        // or a field already has been discovered
-		function isCorrect(x, y) {
+	checkFlags(x, y, total) {
+		const size = this.fieldSize;
+
+		// helper checking if a flag has been set correctly
+		// or a field already has been discovered
+		const isCorrect = (cx, cy) => {
 			if (total) {
-				return ((field[x][y] >= 0) ||
-					    ((field[x][y] == -2) == (mines[x][y] != 0)));
-			} else {
-				return ((field[x][y] >= 0) || (mines[x][y] != 0) ||
-					    ((field[x][y] == -2) == (mines[x][y] != 0)));
+				return this.field[cx][cy] >= 0 ||
+				       (this.field[cx][cy] === CELL_FLAG) === (this.mines[cx][cy] !== 0);
 			}
-		}
+			return this.field[cx][cy] >= 0 || this.mines[cx][cy] !== 0 ||
+			       (this.field[cx][cy] === CELL_FLAG) === (this.mines[cx][cy] !== 0);
+		};
 
 		// if the field contains a mine, return false
-		// this occures when the user clicks on a discovered mine
-		if (mines[x][y] != 0) {
+		// this occurs when the user clicks on a discovered mine
+		if (this.mines[x][y] !== 0) {
 			return false;
 		}
 
-		if ((x > 0) && (y > 0) && (!isCorrect(x-1, y-1))) {
-			return false; // upper left
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				if (dx === 0 && dy === 0) {
+					continue;
+				}
+				const nx = x + dx;
+				const ny = y + dy;
+				if (nx >= 0 && nx < size && ny >= 0 && ny < size && !isCorrect(nx, ny)) {
+					return false;
+				}
+			}
 		}
-		if ((y > 0) && (!isCorrect(x, y-1))) {
-			return false; // above
-		}
-		if ((x < fieldSize - 1) && (y > 0) && (!isCorrect(x+1, y-1))) {
-			return false; // upper right
-		}
-		if ((x < fieldSize - 1) && (!isCorrect(x+1, y))) {
-			return false; // right
-		}
-		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (!isCorrect(x+1, y+1))) {
-			return false; // lower right
-		}
-		if ((y < fieldSize - 1) && (!isCorrect(x, y+1))) {
-			return false; // below
-		}
-		if ((x > 0) && (y < fieldSize - 1) && (!isCorrect(x-1, y+1))) {
-			return false; // lower left
-		}
-		if ((x > 0) && (!isCorrect(x-1, y))) {
-			return false; // left
-		}
+
 		return true;
 	}
 
 	/*
-     * Sets correctly flagged fields to discovered state
-     */
-	function fixFlags(x, y) {
-		var count = 0;
+	 * Sets correctly flagged fields to discovered state
+	 */
+	fixFlags(x, y) {
+		let count = 0;
+		const size = this.fieldSize;
 
-		// helper function checking if there is a flagged mine
-		function flaggedMine(x, y) {
-			return ((field[x][y] == -2) && (mines[x][y] != 0));
-		}
+		// helper checking if there is a flagged mine
+		const flaggedMine = (mx, my) => this.field[mx][my] === CELL_FLAG && this.mines[mx][my] !== 0;
 
-		if ((x > 0) && (y > 0) && (flaggedMine(x-1, y-1))) {
-			field[(x-1)][(y-1)] = 0; // upper left
-			if (adjacentMines(x-1, y-1, true) == 0) {
-				count += discoverAdjacent(x-1, y-1);
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				if (dx === 0 && dy === 0) {
+					continue;
+				}
+				const nx = x + dx;
+				const ny = y + dy;
+				if (nx >= 0 && nx < size && ny >= 0 && ny < size && flaggedMine(nx, ny)) {
+					this.field[nx][ny] = 0;
+					if (this.adjacentMines(nx, ny, true) === 0) {
+						count += this.discoverAdjacent(nx, ny);
+					}
+					count++;
+				}
 			}
-			count++;
-		}
-		if ((y > 0) && (flaggedMine(x, y-1))) {
-			field[x][(y-1)] = 0; // above
-			if (adjacentMines(x, y-1, true) == 0) {
-				count += discoverAdjacent(x, y-1);
-			}
-			count++;
-		}
-		if ((x < fieldSize - 1) && (y > 0) && (flaggedMine(x+1, y-1))) {
-			field[(x+1)][(y-1)] = 0; // upper right
-			if (adjacentMines(x+1, y-1, true) == 0) {
-				count += discoverAdjacent(x+1, y-1);
-			}
-			count++;
-		}
-		if ((x < fieldSize - 1) && (flaggedMine(x+1, y))) {
-			field[(x+1)][y] = 0; // right
-			if (adjacentMines(x+1, y, true) == 0) {
-				count += discoverAdjacent(x+1, y);
-			}
-			count++;
-		}
-		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (flaggedMine(x+1, y+1))) {
-			field[(x+1)][(y+1)] = 0; // lower right
-			if (adjacentMines(x+1, y+1, true) == 0) {
-				count += discoverAdjacent(x+1, y+1);
-			}
-			count++;
-		}
-		if ((y < fieldSize - 1) && (flaggedMine(x, y+1))) {
-			field[x][(y+1)] = 0; // below
-			if (adjacentMines(x, y+1, true) == 0) {
-				count += discoverAdjacent(x, y+1);
-			}
-			count++;
-		}
-		if ((x > 0) && (y < fieldSize - 1) && (flaggedMine(x-1, y+1))) {
-			field[(x-1)][(y+1)] = 0; // lower left
-			if (adjacentMines(x-1, y+1, true) == 0) {
-				count += discoverAdjacent(x-1, y+1);
-			}
-			count++;
-		}
-		if ((x > 0) && (flaggedMine(x-1, y))) {
-			field[(x-1)][y] = 0; // left
-			if (adjacentMines(x-1, y, true) == 0) {
-				count += discoverAdjacent(x-1, y);
-			}
-			count++;
 		}
 
 		return count;
 	}
 
 	/*
-     * Removes all adjacent flags
-     */
-	function removeFlags(x, y) {
-		var count = 0;
+	 * Removes all adjacent flags
+	 */
+	removeFlags(x, y) {
+		let count = 0;
+		const size = this.fieldSize;
 
-		// helper function checking if there is a flagged mine
-		function hasFlag(x, y) {
-			return (field[x][y] == -2);
-		}
-
-		if ((x > 0) && (y > 0) && (hasFlag(x-1, y-1))) {
-			field[(x-1)][(y-1)] = -1; // upper left
-			count++;
-		}
-		if ((y > 0) && (hasFlag(x, y-1))) {
-			field[x][(y-1)] = -1; // above
-			count++;
-		}
-		if ((x < fieldSize - 1) && (y > 0) && (hasFlag(x+1, y-1))) {
-			field[(x+1)][(y-1)] = -1; // upper right
-			count++;
-		}
-		if ((x < fieldSize - 1) && (hasFlag(x+1, y))) {
-			field[(x+1)][y] = -1; // right
-			count++;
-		}
-		if ((x < fieldSize - 1) && (y < fieldSize - 1) && (hasFlag(x+1, y+1))) {
-			field[(x+1)][(y+1)] = -1; // lower right
-			count++;
-		}
-		if ((y < fieldSize - 1) && (hasFlag(x, y+1))) {
-			field[x][(y+1)] = -1; // below
-			count++;
-		}
-		if ((x > 0) && (y < fieldSize - 1) && (hasFlag(x-1, y+1))) {
-			field[(x-1)][(y+1)] = -1; // lower left
-			count++;
-		}
-		if ((x > 0) && (hasFlag(x-1, y))) {
-			field[(x-1)][y] = -1; // left
-			count++;
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				if (dx === 0 && dy === 0) {
+					continue;
+				}
+				const nx = x + dx;
+				const ny = y + dy;
+				if (nx >= 0 && nx < size && ny >= 0 && ny < size &&
+				    this.field[nx][ny] === CELL_FLAG) {
+					this.field[nx][ny] = CELL_UNKNOWN;
+					count++;
+				}
+			}
 		}
 
 		return count;
@@ -918,99 +806,97 @@ function Minesweeper() {
 	/*
 	 * draw function
 	 */
-	function draw() {
-		var i, g;
+	draw() {
+		const ctx = this.context;
+		const style = this.style;
 
-		// only continue if all images are loaded
-		// else wait for event
-		loadingRedraw = true;
-		if (loadingImages > 0) {
+		// only continue if all images are loaded, else wait for event
+		this.loadingRedraw = true;
+		if (this.loadingImages > 0) {
 			return;
-		} else {
-			loadingRedraw = false;
 		}
+		this.loadingRedraw = false;
 
 		// clear
-		context.fillStyle = "rgb(0, 0, 0)";
-		context.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.fillStyle = "rgb(0, 0, 0)";
+		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
 		// draw background
-		if (colorBackground2 != "") {
-			g = context.createLinearGradient(0, 0, 0, canvas.height);
-			g.addColorStop(0, colorBackground1);
-			g.addColorStop(1, colorBackground2);
-			context.fillStyle = g;
+		if (style.colorBackground2 !== "") {
+			const g = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+			g.addColorStop(0, style.colorBackground1);
+			g.addColorStop(1, style.colorBackground2);
+			ctx.fillStyle = g;
 		} else {
-			context.fillStyle = colorBackground1;
+			ctx.fillStyle = style.colorBackground1;
 		}
-		context.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+		const playArea = this.playArea;
 
 		// draw play and control areas
-		if (colorArea != "") {
-			context.fillStyle = colorArea;
-			context.fillRect(playArea[0], playArea[1], playArea[2], playArea[3]);
+		if (style.colorArea !== "") {
+			ctx.fillStyle = style.colorArea;
+			ctx.fillRect(playArea[0], playArea[1], playArea[2], playArea[3]);
 		}
-		if (colorAreaStroke != "") {
-			context.strokeStyle = colorAreaStroke;
-			context.strokeRect(playArea[0], playArea[1], playArea[2], playArea[3]);
+		if (style.colorAreaStroke !== "") {
+			ctx.strokeStyle = style.colorAreaStroke;
+			ctx.strokeRect(playArea[0], playArea[1], playArea[2], playArea[3]);
 		}
 
-		for (var x = 0; x < field.length; x++) {
-			for (var y = 0; y < field[x].length; y++) {
-				// block coordinates
-				var bX, bY, bW, bH;
-
+		for (let x = 0; x < this.field.length; x++) {
+			for (let y = 0; y < this.field[x].length; y++) {
 				// define block coordinates
-				bX = playArea[0] + blockMargin + (blockMargin + blockSize) * x;
-				bY = playArea[1] + blockMargin + (blockMargin + blockSize) * y;
-				bW = bH = blockSize;
+				const bX = playArea[0] + this.blockMargin + (this.blockMargin + this.blockSize) * x;
+				const bY = playArea[1] + this.blockMargin + (this.blockMargin + this.blockSize) * y;
+				const bW = this.blockSize;
+				const bH = this.blockSize;
 
-				if (field[x][y] >= 0) {
-					if (colorBlockDiscovered != "") {
-						context.fillStyle = colorBlockDiscovered;
-						context.fillRect(bX, bY, bW, bH);
+				if (this.field[x][y] >= 0) {
+					if (style.colorBlockDiscovered !== "") {
+						ctx.fillStyle = style.colorBlockDiscovered;
+						ctx.fillRect(bX, bY, bW, bH);
 					}
-					if (colorBlockDiscoveredStroke != "") {
-						context.strokeStyle = colorBlockDiscoveredStroke;
-						context.strokeRect(bX, bY, bW, bH);
+					if (style.colorBlockDiscoveredStroke !== "") {
+						ctx.strokeStyle = style.colorBlockDiscoveredStroke;
+						ctx.strokeRect(bX, bY, bW, bH);
 					}
 				} else {
-					if (colorBlockUnknown != "") {
-						context.fillStyle = colorBlockUnknown;
-						context.fillRect(bX, bY, bW, bH);
+					if (style.colorBlockUnknown !== "") {
+						ctx.fillStyle = style.colorBlockUnknown;
+						ctx.fillRect(bX, bY, bW, bH);
 					}
-					if (colorBlockUnknownStroke != "") {
-						context.strokeStyle = colorBlockUnknownStroke;
-						context.strokeRect(bX, bY, bW, bH);
+					if (style.colorBlockUnknownStroke !== "") {
+						ctx.strokeStyle = style.colorBlockUnknownStroke;
+						ctx.strokeRect(bX, bY, bW, bH);
 					}
 				}
 
 				// mark mistakes
-				if (mistakes[x][y] != 0) {
-					if (colorBlockMistaken != "") {
-						context.fillStyle = colorBlockMistaken;
-						context.fillRect(bX, bY, bW, bH);
+				if (this.mistakes[x][y] !== 0) {
+					if (style.colorBlockMistaken !== "") {
+						ctx.fillStyle = style.colorBlockMistaken;
+						ctx.fillRect(bX, bY, bW, bH);
 					}
-					if (colorBlockMistakenStroke != "") {
-						context.strokeStyle = colorBlockMistakenStroke;
-						context.strokeRect(bX, bY, bW, bH);
+					if (style.colorBlockMistakenStroke !== "") {
+						ctx.strokeStyle = style.colorBlockMistakenStroke;
+						ctx.strokeRect(bX, bY, bW, bH);
 					}
 				}
 
-				// if there is a bomb discovered
-				if (field[x][y] == -2) {
-					context.drawImage(imageFlag, bX, bY, bW, bH);
-				} else if (field[x][y] == -3) {
-					context.drawImage(imageMark, bX, bY, bW, bH);
-				} else if ((field[x][y] >= 0) && (mines[x][y] != 0)) {
-					if (mistakes[x][y] != 0) {
-						context.drawImage(imageExplode, bX, bY, bW, bH);
+				// draw the appropriate piece
+				if (this.field[x][y] === CELL_FLAG) {
+					ctx.drawImage(this.images.flag, bX, bY, bW, bH);
+				} else if (this.field[x][y] === CELL_MARK) {
+					ctx.drawImage(this.images.mark, bX, bY, bW, bH);
+				} else if (this.field[x][y] >= 0 && this.mines[x][y] !== 0) {
+					if (this.mistakes[x][y] !== 0) {
+						ctx.drawImage(this.images.explode, bX, bY, bW, bH);
 					} else {
-						context.drawImage(imageBomb, bX, bY, bW, bH);
+						ctx.drawImage(this.images.bomb, bX, bY, bW, bH);
 					}
-				} else if (field[x][y] > 0) {
-					i = field[x][y] - 1;
-					context.drawImage(imageCounter[i], bX, bY, bW, bH);
+				} else if (this.field[x][y] > 0) {
+					ctx.drawImage(this.imageCounter[this.field[x][y] - 1], bX, bY, bW, bH);
 				}
 			}
 		}

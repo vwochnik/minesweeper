@@ -1,241 +1,199 @@
-var myGame;
+let myGame;
 
-function game() {
-	var myMine, myHowtoPopup, gameState, scoreForm;
-	var gameBtn, size1Btn, size2Btn, size3Btn, size4Btn,
-	    easyBtn, normalBtn, hardBtn, extremeBtn,
-	    style1Btn, style2Btn, style3Btn, okBtn;
-	var playing = false; // if true, when clicked on smiley, then no settings
+class Game {
+	constructor() {
+		this.myMine = null;
+		this.myHowtoPopup = null;
+		this.gameState = null;
+		this.scoreForm = null;
+		this.buttons = {};
+		this.playing = false; // if true, when clicked on smiley, then no settings
 
-	function init() {
-		myHowtoPopup = new popup("howtolink", 392, 522, true);
-
-		if ((document.getElementById) && (document.addEventListener) &&
-		    (window.addEventListener)) {
-			// get buttons
-			gameBtn = document.getElementById("msgamebtn");
-			size1Btn = document.getElementById("mssize1btn");
-			size2Btn = document.getElementById("mssize2btn");
-			size3Btn = document.getElementById("mssize3btn");
-			size4Btn = document.getElementById("mssize4btn");
-			easyBtn = document.getElementById("mseasybtn");
-			normalBtn = document.getElementById("msnormalbtn");
-			hardBtn = document.getElementById("mshardbtn");
-			extremeBtn = document.getElementById("msextremebtn");
-			style1Btn = document.getElementById("msstyle1btn");
-			style2Btn = document.getElementById("msstyle2btn");
-			style3Btn = document.getElementById("msstyle3btn");
-			okBtn = document.getElementById("msokbtn");
-			scoreForm = document.getElementById('msscoreform');
-
-			// associate events
-			if ((gameBtn) && (size1Btn) && (size2Btn) && (size3Btn) && (size4Btn) && 
-			    (easyBtn) && (normalBtn) && (hardBtn) && (extremeBtn) && (style1Btn) &&
-			    (style2Btn) && (style3Btn) && (okBtn)) {
-				gameBtn.addEventListener("click", onGameBtn, false);
-				size1Btn.addEventListener("click", onSize1Btn, false);
-				size2Btn.addEventListener("click", onSize2Btn, false);
-				size3Btn.addEventListener("click", onSize3Btn, false);
-				size4Btn.addEventListener("click", onSize4Btn, false);
-				easyBtn.addEventListener("click", onEasyBtn, false);
-				normalBtn.addEventListener("click", onNormalBtn, false);
-				hardBtn.addEventListener("click", onHardBtn, false);
-				extremeBtn.addEventListener("click", onExtremeBtn, false);
-				style1Btn.addEventListener("click", onStyle1Btn, false);
-				style2Btn.addEventListener("click", onStyle2Btn, false);
-				style3Btn.addEventListener("click", onStyle3Btn, false);
-				okBtn.addEventListener("click", onOkBtn, false);
-				if (scoreForm) {
-					scoreForm.addEventListener("submit", onSubmit, false);
-				}
-			}
-
-			// resize event
-			window.addEventListener("resize", onResize, false);
-			if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i)) || (navigator.userAgent.match(/iPad/i))) {
-				window.addEventListener("orient", onResize, false);
-			}
-
-			// initialize game object
-			onResize(); // first set canvas size <dirty>
-			setGameState('ingame');
-			myMine = new Minesweeper();
-
-			// attach events
-			myMine.onNewGame = function() { playing = false; };
-			myMine.onStartGame = function() { playing = true; };
-			myMine.onGameOver = function() { playing = true; };
-			myMine.onFinished = function() { playing = false; setGameState('form'); };
-
-			// start new game
-			myMine.setStyle(0, false);
-			myMine.newGameScale(9);
-			myMine.setDifficulty(1);
-			size2Btn.className = 'active small';
-			normalBtn.className = 'active small';
-			style1Btn.className = 'active small';
-		}
+		this.init();
 	}
 
-	init();
+	init() {
+		this.myHowtoPopup = new Popup("howtolink", 392, 522, true);
+
+		if (!document.getElementById || !document.addEventListener || !window.addEventListener) {
+			return;
+		}
+
+		// get buttons
+		const ids = {
+			gameBtn: "msgamebtn",
+			size1Btn: "mssize1btn",
+			size2Btn: "mssize2btn",
+			size3Btn: "mssize3btn",
+			size4Btn: "mssize4btn",
+			easyBtn: "mseasybtn",
+			normalBtn: "msnormalbtn",
+			hardBtn: "mshardbtn",
+			extremeBtn: "msextremebtn",
+			style1Btn: "msstyle1btn",
+			style2Btn: "msstyle2btn",
+			style3Btn: "msstyle3btn",
+			okBtn: "msokbtn",
+		};
+		for (const [key, id] of Object.entries(ids)) {
+			this.buttons[key] = document.getElementById(id);
+		}
+		this.scoreForm = document.getElementById("msscoreform");
+
+		const b = this.buttons;
+		const sizes = [6, 9, 12, 16];
+
+		// associate events
+		if (b.gameBtn && b.size1Btn && b.size2Btn && b.size3Btn && b.size4Btn &&
+		    b.easyBtn && b.normalBtn && b.hardBtn && b.extremeBtn && b.style1Btn &&
+		    b.style2Btn && b.style3Btn && b.okBtn) {
+			b.gameBtn.addEventListener("click", () => this.onGameBtn(), false);
+			b.size1Btn.addEventListener("click", () => this.onSizeBtn(0, sizes[0]), false);
+			b.size2Btn.addEventListener("click", () => this.onSizeBtn(1, sizes[1]), false);
+			b.size3Btn.addEventListener("click", () => this.onSizeBtn(2, sizes[2]), false);
+			b.size4Btn.addEventListener("click", () => this.onSizeBtn(3, sizes[3]), false);
+			b.easyBtn.addEventListener("click", () => this.onDifficultyBtn(0), false);
+			b.normalBtn.addEventListener("click", () => this.onDifficultyBtn(1), false);
+			b.hardBtn.addEventListener("click", () => this.onDifficultyBtn(2), false);
+			b.extremeBtn.addEventListener("click", () => this.onDifficultyBtn(3), false);
+			b.style1Btn.addEventListener("click", () => this.onStyleBtn(0), false);
+			b.style2Btn.addEventListener("click", () => this.onStyleBtn(1), false);
+			b.style3Btn.addEventListener("click", () => this.onStyleBtn(2), false);
+			b.okBtn.addEventListener("click", () => this.setGameState("ingame"), false);
+			if (this.scoreForm) {
+				this.scoreForm.addEventListener("submit", () => this.onSubmit(), false);
+			}
+		}
+
+		// resize event
+		window.addEventListener("resize", () => this.onResize(), false);
+		if (/iPhone|iPod|iPad/i.test(navigator.userAgent)) {
+			window.addEventListener("orient", () => this.onResize(), false);
+		}
+
+		// initialize game object
+		this.onResize(); // first set canvas size <dirty>
+		this.setGameState("ingame");
+		this.myMine = new Minesweeper();
+
+		// attach events
+		this.myMine.onNewGame = () => { this.playing = false; };
+		this.myMine.onStartGame = () => { this.playing = true; };
+		this.myMine.onGameOver = () => { this.playing = true; };
+		this.myMine.onFinished = () => { this.playing = false; this.setGameState("form"); };
+
+		// start new game
+		this.myMine.setStyle(0, false);
+		this.myMine.newGameScale(9);
+		this.myMine.setDifficulty(1);
+		b.size2Btn.className = "active small";
+		b.normalBtn.className = "active small";
+		b.style1Btn.className = "active small";
+	}
 
 	/*
 	 * site state
 	 */
-	function setGameState(s) {
-		gameState = s;
-		if (s == 'ingame') {
-			document.getElementById("msbtn").className = 'ingame';
-			document.getElementById("mstime").className = 'ingame';
-			document.getElementById("mswrapper").style.display = 'block';
-			document.getElementById("mssettings").style.display = 'none';
-			document.getElementById("msform").style.display = 'none';
+	setGameState(s) {
+		this.gameState = s;
+		if (s === "ingame") {
+			document.getElementById("msbtn").className = "ingame";
+			document.getElementById("mstime").className = "ingame";
+			document.getElementById("mswrapper").style.display = "block";
+			document.getElementById("mssettings").style.display = "none";
+			document.getElementById("msform").style.display = "none";
 		} else {
-			document.getElementById("msbtn").className = '';
-			document.getElementById("mstime").className = '';
-			document.getElementById("mswrapper").style.display = 'none';
+			document.getElementById("msbtn").className = "";
+			document.getElementById("mstime").className = "";
+			document.getElementById("mswrapper").style.display = "none";
 
-			if (s == 'form') {
-				document.getElementById("msscore").firstChild.nodeValue = myMine.getScore();
-				document.getElementById("mssettings").style.display = 'none';
-				document.getElementById("msform").style.display = 'inline';
+			if (s === "form") {
+				document.getElementById("msscore").firstChild.nodeValue = this.myMine.getScore();
+				document.getElementById("mssettings").style.display = "none";
+				document.getElementById("msform").style.display = "inline";
 			} else {
-				document.getElementById("mssettings").style.display = 'inline';
-				document.getElementById("msform").style.display = 'none';
+				document.getElementById("mssettings").style.display = "inline";
+				document.getElementById("msform").style.display = "none";
 			}
 		}
 	}
 
-	function onGameBtn(e) {
-		if ((gameState != 'settings') && (!playing)) {
-			myMine.newGame();
-			setGameState('settings');
+	onGameBtn() {
+		if (this.gameState !== "settings" && !this.playing) {
+			this.myMine.newGame();
+			this.setGameState("settings");
 		} else {
-			if (playing) {
-				myMine.newGame();
+			if (this.playing) {
+				this.myMine.newGame();
 			}
-			setGameState('ingame');
+			this.setGameState("ingame");
 		}
 	}
 
-	function onSize1Btn(e) {
-		myMine.newGameScale(6);
-		size1Btn.className = 'active small';
-		size2Btn.className = size3Btn.className = size4Btn.className = 'small';
+	onSizeBtn(index, scale) {
+		this.myMine.newGameScale(scale);
+		const map = ["size1Btn", "size2Btn", "size3Btn", "size4Btn"];
+		map.forEach((key, i) => {
+			this.buttons[key].className = i === index ? "active small" : "small";
+		});
 	}
 
-	function onSize2Btn(e) {
-		myMine.newGameScale(9);
-		size2Btn.className = 'active small';
-		size1Btn.className = size3Btn.className = size4Btn.className = 'small';
-	}
-
-	function onSize3Btn(e) {
-		myMine.newGameScale(12);
-		size3Btn.className = 'active small';
-		size1Btn.className = size2Btn.className = size4Btn.className = 'small';
-	}
-
-	function onSize4Btn(e) {
-		myMine.newGameScale(16);
-		size4Btn.className = 'active small';
-		size1Btn.className = size2Btn.className = size3Btn.className = 'small';
-	}
-
-	function onEasyBtn(e) {
-		if (myMine.setDifficulty(0)) {
-			easyBtn.className = 'active small';
-			normalBtn.className = hardBtn.className = extremeBtn.className = 'small';
+	onDifficultyBtn(d) {
+		if (this.myMine.setDifficulty(d)) {
+			const map = ["easyBtn", "normalBtn", "hardBtn", "extremeBtn"];
+			map.forEach((key, i) => {
+				this.buttons[key].className = i === d ? "active small" : "small";
+			});
 		}
 	}
 
-	function onNormalBtn(e) {
-		if (myMine.setDifficulty(1)) {
-			normalBtn.className = 'active small';
-			easyBtn.className = hardBtn.className = extremeBtn.className = 'small';
+	onStyleBtn(s) {
+		if (this.myMine.setStyle(s)) {
+			const map = ["style1Btn", "style2Btn", "style3Btn"];
+			map.forEach((key, i) => {
+				this.buttons[key].className = i === s ? "active small" : "small";
+			});
 		}
 	}
 
-	function onHardBtn(e) {
-		if (myMine.setDifficulty(2)) {
-			hardBtn.className = 'active small';
-			easyBtn.className = normalBtn.className = extremeBtn.className = 'small';
-		}
-	}
+	onResize() {
+		const w = document.getElementById("mswrapper");
+		const c = document.getElementById("mscanvas");
 
-	function onExtremeBtn(e) {
-		if (myMine.setDifficulty(3)) {
-			extremeBtn.className = 'active small';
-			easyBtn.className = normalBtn.className = hardBtn.className = 'small';
-		}
-	}
-
-	function onStyle1Btn(e) {
-		if (myMine.setStyle(0)) {
-			style1Btn.className = 'active small';
-			style2Btn.className = style3Btn.className = 'small';
-		}
-	}
-
-	function onStyle2Btn(e) {
-		if (myMine.setStyle(1)) {
-			style2Btn.className = 'active small';
-			style1Btn.className = style3Btn.className = 'small';
-		}
-	}
-
-	function onStyle3Btn(e) {
-		if (myMine.setStyle(2)) {
-			style3Btn.className = 'active small';
-			style1Btn.className = style2Btn.className = 'small';
-		}
-	}
-
-	function onOkBtn(e) {
-		setGameState('ingame');
-	}
-
-	function onResize(e) {
-		var w = document.getElementById("mswrapper");
-		var c = document.getElementById("mscanvas");
-
-		if ((c) && (c)) {
+		if (c && w) {
 			c.width = w.clientWidth;
 			c.height = w.clientWidth;
 		}
 
-		if (myMine) {
-			myMine.refreshDimensions();
+		if (this.myMine) {
+			this.myMine.refreshDimensions();
 		}
 	}
 
 	/*
 	 * adds necessary form nodes containing score and time
 	 */
-	function onSubmit(e) {
-		var input1, input2;
-
-		// append score to form
-		input1 = document.createElement("input");
+	onSubmit() {
+		// append difficulty to form
+		const input1 = document.createElement("input");
 		input1.setAttribute("type", "hidden");
 		input1.setAttribute("name", "difficulty");
-		input1.setAttribute("value", myMine.getDifficulty());
-		scoreForm.appendChild(input1);
+		input1.setAttribute("value", this.myMine.getDifficulty());
+		this.scoreForm.appendChild(input1);
 
 		// append score to form
-		input2 = document.createElement("input");
+		const input2 = document.createElement("input");
 		input2.setAttribute("type", "hidden");
 		input2.setAttribute("name", "score");
-		input2.setAttribute("value", myMine.getScore());
-		scoreForm.appendChild(input2);
+		input2.setAttribute("value", this.myMine.getScore());
+		this.scoreForm.appendChild(input2);
 
 		return true;
 	}
 }
 
 if (window.addEventListener) {
-	window.addEventListener("load", function() { myGame = new game(); }, false);
+	window.addEventListener("load", () => { myGame = new Game(); }, false);
 } else {
 	alert("Error initializing game.");
 }
-
